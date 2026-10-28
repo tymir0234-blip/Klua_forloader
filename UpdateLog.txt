@@ -1,24 +1,24 @@
 v6.2 — console filter + fixes
-✨ Новое
+✨ New
 
-    Console Filter — новый модуль в miscellaneous → config. Оставляет в консоли только kill/miss-логи, скрывая весь остальной спам (включая сообщения движка и чужих модулей). Работает через con_filter_enable / con_filter_text с префиксом [K/M].
+    Console Filter — new module in miscellaneous → config. Leaves only kill/miss logs in the console, hiding all other spam (including engine messages and third-party modules). Works via con_filter_enable / con_filter_text with the [K/M] prefix.
 
-        Kill-логи: [K/M] KILL <ник>
+        Kill logs: [K/M] KILL <nickname>
 
-        Miss-логи: [K/M] MISS target N cycle side K (резолвер) / [K/M] MISS silent aim — 1.0s no hit (silent aim)
+        Miss logs: [K/M] MISS target N cycle side K (resolver) / [K/M] MISS silent aim — 1.0s no hit (silent aim)
 
-        Оригинальные con_filter_* сохраняются и восстанавливаются при выключении чекбокса и на on_unload
+        Original con_filter_* values are saved and restored when the checkbox is turned off and on on_unload
 
-        Кнопка Re-apply Filter на случай, если другой модуль сбросил cvar
+        Re-apply Filter button in case another module resets the cvar
 
-    Miss-детект для Silent Aim — если включён SA без резолвера, при 1.0 с непрерывной стрельбы без player_hurt пишется miss-лог
+    Silent Aim miss detection — if SA is enabled without the resolver, a miss log is written after 1.0s of continuous fire with no player_hurt
 
-    Kill-лог в player_death — ник жертвы пишется в консоль с префиксом [K/M]
+    Kill log in player_death — victim's nickname is printed to console with the [K/M] prefix
 
-🔧 Исправления
+🔧 Fixes
 
-    p:is_valid() — оставлен, подтверждён документацией En1gma
+    p:is_valid() — kept, confirmed by En1gma documentation
 
-    find_plausible_key — проверка info.writable теперь через == nil or truthy, ключ находится даже если поле writable отсутствует в рантайме (нет в доке)
+    find_plausible_key — info.writable check now uses == nil or truthy, so the key is found even if the writable field is missing at runtime (not in docs)
 
-    imgui.get_display_size → render.get_screen_size — метод get_display_size в API отсутствует, интро и меню могли не отрисовываться
+    imgui.get_display_size → render.get_screen_size — get_display_size doesn't exist in the API; intro and menu could fail to render
