@@ -1,1 +1,2 @@
 # HWID | status
+17CC8E63928EC92E | ok
