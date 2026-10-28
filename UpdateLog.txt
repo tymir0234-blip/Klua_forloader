@@ -1,0 +1,24 @@
+v6.2 — console filter + fixes
+✨ Новое
+
+    Console Filter — новый модуль в miscellaneous → config. Оставляет в консоли только kill/miss-логи, скрывая весь остальной спам (включая сообщения движка и чужих модулей). Работает через con_filter_enable / con_filter_text с префиксом [K/M].
+
+        Kill-логи: [K/M] KILL <ник>
+
+        Miss-логи: [K/M] MISS target N cycle side K (резолвер) / [K/M] MISS silent aim — 1.0s no hit (silent aim)
+
+        Оригинальные con_filter_* сохраняются и восстанавливаются при выключении чекбокса и на on_unload
+
+        Кнопка Re-apply Filter на случай, если другой модуль сбросил cvar
+
+    Miss-детект для Silent Aim — если включён SA без резолвера, при 1.0 с непрерывной стрельбы без player_hurt пишется miss-лог
+
+    Kill-лог в player_death — ник жертвы пишется в консоль с префиксом [K/M]
+
+🔧 Исправления
+
+    p:is_valid() — оставлен, подтверждён документацией En1gma
+
+    find_plausible_key — проверка info.writable теперь через == nil or truthy, ключ находится даже если поле writable отсутствует в рантайме (нет в доке)
+
+    imgui.get_display_size → render.get_screen_size — метод get_display_size в API отсутствует, интро и меню могли не отрисовываться
