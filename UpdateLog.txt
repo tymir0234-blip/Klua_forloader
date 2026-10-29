@@ -1,24 +1,71 @@
-v6.2 — console filter + fixes
-✨ New
+v6.3 — anti-aim builder integration
+✨ New: Anti-Aim Builder
 
-    Console Filter — new module in miscellaneous → config. Leaves only kill/miss logs in the console, hiding all other spam (including engine messages and third-party modules). Works via con_filter_enable / con_filter_text with the [K/M] prefix.
+Ported from untiled v5.3 (deobfuscated). The builder manipulates the cheat's native aim.anti_aim.* settings per-tick, based on the local player's movement state. It does not write command angles — it switches the engine's own anti-aim pitch/yaw settings before the cheat's AA runs.
 
-        Kill logs: [K/M] KILL <nickname>
+Five states — Global, Standing, Moving, Air, Crouch. Each state has its own isolated yaw/pitch configuration:
 
-        Miss logs: [K/M] MISS target N cycle side K (resolver) / [K/M] MISS silent aim — 1.0s no hit (silent aim)
+    Yaw modes
 
-        Original con_filter_* values are saved and restored when the checkbox is turned off and on on_unload
+        Static — fixed yaw
 
-        Re-apply Filter button in case another module resets the cvar
+        Jitter — alternate / 3-way / random side, with configurable left/right yaw and delay
 
-    Silent Aim miss detection — if SA is enabled without the resolver, a miss log is written after 1.0s of continuous fire with no player_hurt
+        Spin — continuous rotation with configurable degrees-per-tick
 
-    Kill log in player_death — victim's nickname is printed to console with the [K/M] prefix
+        Random — random yaw within [min, max] refreshed every N ticks
 
-🔧 Fixes
+    Yaw flick — periodic offset jump for N ticks every M ticks, with configurable offset/every/hold
 
-    p:is_valid() — kept, confirmed by En1gma documentation
+    Pitch modes — Off / Down / Up, with independent flick (separate mode, every, hold)
 
-    find_plausible_key — info.writable check now uses == nil or truthy, so the key is found even if the writable field is missing at runtime (not in docs)
+State override — each state has a use flag. If Standing/Moving/Air/Crouch isn't overridden, the builder falls back to Global and reports it in the runtime panel (Standing -> Global).
 
-    imgui.get_display_size → render.get_screen_size — get_display_size doesn't exist in the API; intro and menu could fail to render
+Native output controls — Yaw base (View / At targets), Leg movement, Freestanding, Align, Anti-backstab, Hide shots — all written through the same tick loop.
+🎛️ UI
+
+    New sub-tab miscellaneous → anti-aim
+
+        Col 0: Yaw Builder (state selector, override toggle, mode-specific sliders, flick) + Pitch Builder (base mode, flick)
+
+        Col 1: Native Output (yaw base, legs, freestand, align, backstab, hide shots) + Runtime panel (active state, detected state, current yaw, current pitch)
+
+        Combo items for pitch/yaw base/legs are resolved at UI time via settings.info(key).choices — no hardcoded counts, adapts to the cheat build.
+
+    Config tab shifted from id=21 to id=22 (internal — no visual difference, just avoids the sub-tab ID collision with the new anti-aim page).
+
+    miscellaneous tab now has three sub-tabs: main, anti-aim, config.
+
+🔧 Behavior
+
+    on_createmove_start — new callback registered for the builder (KLua previously used only on_createmove_end).
+
+    Per-tick diff write — builder_write() skips if applied[key] == value and the last write was under 32 ticks ago. Prevents spamming settings.set at 64 tick/s.
+
+    Graceful native unavailability — builder_write() checks settings.info(key) before every write. If the cheat build doesn't expose a native AA key, the builder silently skips it instead of spamming errors in the console.
+
+    Restoration on stop — start_builder() captures originals of all 9 aim.anti_aim.* keys. stop_builder() (called on disable or on_unload) restores them.
+
+    State detection — per-tick check: not alive → Global, not on ground → Air, +duck → Crouch, |v|² > 64 → Moving, else Standing.
+
+    Random side jitter — uses utils.random_int() if available, falls back to math.random().
+
+    Builder error isolation — on_createmove_start wraps update_builder in pcall with a one-shot error log (_err_builder), so a bad native write can't kill the whole createmove chain.
+
+💾 Config
+
+    88 new keys added to SAVE_KEYS:
+
+        8 globals: aa_enable, aa_editor_state, aa_yaw_base, aa_freestand, aa_align, aa_backstab, aa_hide_shots, aa_legs
+
+        5 states × 16 suffixes: use, yaw_mode, yaw_a, yaw_b, yaw_ticks, jitter_type, spin_speed, yaw_flick, yaw_flick_offset, yaw_flick_every, yaw_flick_hold, pitch, pitch_flick, pitch_flick_mode, pitch_flick_every, pitch_flick_hold
+
+    Defaults are set via init_aa_state() — global is active, other states are opt-in with the same defaults as global.
+
+    Backward compatibility — old configs load fine, missing AA keys fall back to defaults (no config migration needed).
+
+🧹 Internal
+
+    cfg_native_choice() — new UI helper, wraps settings.info(key).choices into a combo. Used for pitch, yaw_base, legs.
+
+    normalize_yaw(), builder_choice(), builder_yaw() — angle math helpers, ported from untiled with only style changes.
